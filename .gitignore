@@ -1,0 +1,7 @@
+.env*
+notes.txt
+configs/*
+
+secrets/*
+!secrets/.gitkeep 
+test-Dockerfile

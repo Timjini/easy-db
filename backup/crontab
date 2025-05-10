@@ -1,0 +1,1 @@
+0 3 * * * /backup/backup.sh

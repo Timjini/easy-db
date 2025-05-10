@@ -1,0 +1,94 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_main:/var/lib/postgresql/data
+      - ./configs/postgres/pg_hba.conf:/etc/postgresql-custom/pg_hba.conf
+      - ./configs/postgres/postgresql.conf:/etc/postgresql-custom/postgresql.conf
+    command: >
+      postgres -c config_file=/etc/postgresql-custom/postgresql.conf
+    ports:
+      - "5433:5432"
+    networks:
+      - app_network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+    secrets:
+      - mysql_root_password
+      - mysql_password
+    ports:
+      - "3307:3306"
+    volumes: 
+      - mysql_main:/var/lib/mysql
+      - ./configs/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - app_network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      - app_network
+
+  # dbmate_postgres:
+  #   image: amacneil/dbmate:latest
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     DATABASE_URL: ${DATABASE_URL}
+  #   volumes:
+  #     - ./migrations/${DB_NAME}:/db/migrations
+  #   command: ["up"]
+  #   networks:
+  #     - app_network
+
+  # backup_service:
+  #   image: amazon/aws-cli:latest
+  #   container_name: postgres_backup
+  #   secrets:
+  #     - aws_access_key_id
+  #     - aws_secret_access_key
+  #   environment:
+  #     AWS_DEFAULT_REGION: ${AWS_REGION}
+  #     AWS_ACCESS_KEY_ID_FILE: /run/secrets/aws_access_key_id
+  #     AWS_SECRET_ACCESS_KEY_FILE: /run/secrets/aws_secret_access_key
+  #   volumes:
+  #     - ./backup:/backup
+  #   entrypoint: ["sh", "-c", "/backup/backup.sh"]
+  #   depends_on:
+  #     - ${PG_CONTAINER_NAME}
+  #   networks:
+  #     - app_network
+
+networks:
+  app_network:
+
+volumes:
+  postgres_main:
+  mysql_main:
+
+secrets:
+  postgres_password:
+    external: true
+  mysql_root_password:
+    external: true
+  mysql_password:
+    external: true
+  aws_access_key_id:
+    external: true
+  aws_secret_access_key:
+    external: true
